@@ -46,7 +46,9 @@ app.post('/webhook', async (req, res) => {
               { recipient: { id: senderId }, message: { text: reply } },
               { params: { access_token: IG_TOKEN } }
             );
-          } catch(e) {
+} catch(e) {
+  console.error('XATO:', e.response ? JSON.stringify(e.response.data) : e.message);
+}
             console.error(e.message);
           }
         }
