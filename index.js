@@ -7,7 +7,6 @@ const VERIFY_TOKEN = process.env.VERIFY_TOKEN || 'mytoken123';
 const IG_TOKEN = process.env.IG_ACCESS_TOKEN;
 const CLAUDE_KEY = process.env.CLAUDE_API_KEY;
 
-// Webhook verification
 app.get('/webhook', (req, res) => {
   if (req.query['hub.verify_token'] === VERIFY_TOKEN) {
     res.send(req.query['hub.challenge']);
@@ -16,7 +15,6 @@ app.get('/webhook', (req, res) => {
   }
 });
 
-// Messages
 app.post('/webhook', async (req, res) => {
   const body = req.body;
   if (body.object === 'instagram') {
@@ -28,23 +26,37 @@ app.post('/webhook', async (req, res) => {
           try {
             const claude = await axios.post(
               'https://api.anthropic.com/v1/messages',
-              { model: 'claude-sonnet-4-20250514', max_tokens: 500,
-                messages: [{ role: 'user', content: text }] },
-              { headers: { 'x-api-key': CLAUDE_KEY,
-                'anthropic-version': '2023-06-01',
-                'Content-Type': 'application/json' } }
+              {
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 500,
+                messages: [{ role: 'user', content: text }]
+              },
+              {
+                headers: {
+                  'x-api-key': CLAUDE_KEY,
+                  'anthropic-version': '2023-06-01',
+                  'Content-Type': 'application/json'
+                }
+              }
             );
             const reply = claude.data.content[0].text;
+            const url = 'https://graph.facebook.com/v18.0/me/messages';
             await axios.post(
-              https://graph.facebook.com/v18.0/me/messages?access_token=${IG_TOKEN},
-              { recipient: { id: senderId }, message: { text: reply } }
+              url,
+              { recipient: { id: senderId }, message: { text: reply } },
+              { params: { access_token: IG_TOKEN } }
             );
-          } catch(e) { console.error(e.message); }
+          } catch(e) {
+            console.error(e.message);
+          }
         }
       }
     }
     res.sendStatus(200);
-  } else { res.sendStatus(404); }
+  } else {
+    res.sendStatus(404);
+  }
 });
 
-app.listen(process.env.PORT || 3000, () => console.log('Bot ishlamoqda!'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log('Bot ishlamoqda! Port: ' + PORT));
